@@ -60,6 +60,16 @@ def _no_small_print_explanations(policy: Policy) -> str:
     )
 
 
+def _breadcrumb_navigation(policy: Policy) -> str:
+    return (
+        "- Do not use an independent “Back to previous level” button on every detail page as a substitute for "
+        "breadcrumbs. Use the project breadcrumb component for hierarchy navigation. Show the complete hierarchy "
+        "path from the home page or root module to the current page. Every ancestor node must link to its "
+        "destination, the current page node must not be clickable, and navigation levels must match the actual "
+        "route structure."
+    )
+
+
 RULES = {
     "object-storage": Rule(
         _object_storage,
@@ -100,11 +110,25 @@ RULES = {
             "Confirm unnecessary explanatory copy is removed instead of visually de-emphasized.",
         ),
     ),
+    "breadcrumb-navigation": Rule(
+        _breadcrumb_navigation,
+        "Navigation hierarchy. Identify the actual route structure, the home or root navigation starting point, each "
+        "breadcrumb ancestor and its destination, and the non-clickable current page node.",
+        "Breadcrumb Navigation",
+        "Record the route hierarchy and breadcrumb component used by detail pages, including the navigation root, "
+        "ancestor destinations, and the current page node.",
+        (
+            "Confirm detail-page hierarchy navigation uses breadcrumbs rather than an independent back button on every page.",
+            "Confirm breadcrumbs show the complete hierarchy path from the home page or root module.",
+            "Confirm every ancestor node links to its destination and the current page node is not clickable.",
+            "Confirm navigation levels match the actual route structure.",
+        ),
+    ),
 }
 
 DEFAULT_PROFILE = "backend"
 BACKEND_RULES = ("object-storage", "background-work")
-FRONTEND_RULES = ("no-small-print-explanations",)
+FRONTEND_RULES = ("no-small-print-explanations", "breadcrumb-navigation")
 BACKEND_SCOPE = "For backend changes involving data storage, long request work, or async jobs"
 BACKEND_NOTE = "Skip Harness for UI-only changes. For full-stack changes, apply the prompt to the backend portion."
 FRONTEND_SCOPE = "For frontend changes involving page copy, layout, or component interaction"

@@ -31,6 +31,22 @@ def test_frontend_project_applies_readability_rule_without_source_scan(tmp_path,
     assert json.loads(capsys.readouterr().out) == {"blocking": [], "advisories": [], "files_scanned": 0}
 
 
+def test_frontend_project_applies_breadcrumb_navigation_rule(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    assert main(["setup", "--profile", "frontend"]) == 0
+    capsys.readouterr()
+
+    assert main(["prompt", "Open the order detail page"]) == 0
+    output = capsys.readouterr().out
+    assert "Breadcrumb Navigation" in output
+    assert "independent “Back to previous level” button" in output
+    assert "complete hierarchy path" in output
+    assert "Every ancestor node must link to its destination" in output
+    assert "current page node must not be clickable" in output
+    assert "home page or root module" in output
+    assert "actual route structure" in output
+
+
 def test_frontend_override_skips_full_stack_context(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     assert main(["setup", "--profile", "backend"]) == 0
@@ -42,12 +58,13 @@ def test_frontend_override_skips_full_stack_context(tmp_path, monkeypatch, capsy
     light = capsys.readouterr().out
     assert "Internal backend context" not in light
     assert "object storage" not in light
+    assert "Breadcrumb Navigation" in light
+    assert "Asynchronous Work" not in light
 
     assert main(["prompt", "Export reports"]) == 0
     complete = capsys.readouterr().out
     assert "Internal backend context" in complete
     assert "object storage" in complete
-    assert len(light) < len(complete)
 
 
 def test_backend_applies_language_checks_only_to_matching_files(tmp_path, monkeypatch, capsys):
