@@ -63,6 +63,37 @@ def test_prompt_resolves_project_or_accepts_explicit_path_and_stdin(tmp_path, mo
     assert "missing .harness/config.json" in capsys.readouterr().err
 
 
+def test_frontend_setup_upgrades_legacy_configuration(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    agents = tmp_path / "AGENTS.md"
+    agents.write_text("# Project notes\n\nUse the existing component library.\n", encoding="utf-8")
+    harness = tmp_path / ".harness"
+    harness.mkdir()
+    (harness / "config.json").write_text('{"version": 1, "profile": "frontend"}\n', encoding="utf-8")
+    (harness / "manifest.json").write_text(
+        '{"version": 1, "managed_files": ["config.json", "manifest.json"]}\n', encoding="utf-8"
+    )
+    capsys.readouterr()
+
+    assert main(["setup", "--profile", "frontend"]) == 0
+    assert {path.name for path in harness.iterdir()} == {
+        "ARCHITECTURE.md",
+        "PROMPT_TEMPLATE.md",
+        "REVIEW_CHECKLIST.md",
+        "config.json",
+        "manifest.json",
+    }
+    assert json.loads((harness / "manifest.json").read_text(encoding="utf-8"))["managed_files"] == [
+        "config.json",
+        "ARCHITECTURE.md",
+        "PROMPT_TEMPLATE.md",
+        "REVIEW_CHECKLIST.md",
+        "manifest.json",
+    ]
+    assert "Use the existing component library." in agents.read_text(encoding="utf-8")
+    assert "harness prompt" in agents.read_text(encoding="utf-8")
+
+
 @pytest.mark.parametrize(
     ("filename", "content", "error_code"),
     [

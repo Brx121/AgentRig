@@ -3,19 +3,28 @@ import json
 from harness.cli import main
 
 
-def test_frontend_project_has_no_harness_guidance_or_source_scan(tmp_path, monkeypatch, capsys):
+def test_frontend_project_applies_readability_rule_without_source_scan(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     assert main(["setup", "--profile", "frontend"]) == 0
-    assert not (tmp_path / "AGENTS.md").exists()
-    assert not (tmp_path / "CLAUDE.md").exists()
-    assert {path.name for path in (tmp_path / ".harness").iterdir()} == {"config.json", "manifest.json"}
+    assert "harness prompt" in (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
+    assert "harness prompt" in (tmp_path / "CLAUDE.md").read_text(encoding="utf-8")
+    assert {path.name for path in (tmp_path / ".harness").iterdir()} == {
+        "ARCHITECTURE.md",
+        "PROMPT_TEMPLATE.md",
+        "REVIEW_CHECKLIST.md",
+        "config.json",
+        "manifest.json",
+    }
     (tmp_path / "model.py").write_text("content = Column(Text)\ntime.sleep(10)\n", encoding="utf-8")
     capsys.readouterr()
 
     assert main(["prompt", "Adjust table styling"]) == 0
     output = capsys.readouterr().out
     assert "Adjust table styling" in output
-    assert "Core Engineering Constraints" not in output
+    assert "Core Engineering Constraints" in output
+    assert "Page Copy and Readability" in output
+    assert "small-print explanations" in output
+    assert "object storage" not in output
     assert "Asynchronous" not in output
 
     assert main(["check", "--strict", "--json"]) == 0
@@ -62,7 +71,7 @@ def test_backend_applies_language_checks_only_to_matching_files(tmp_path, monkey
     }
 
 
-def test_switch_to_frontend_removes_managed_guidance_and_preserves_manual_notes(tmp_path, monkeypatch, capsys):
+def test_switch_to_frontend_updates_managed_guidance_and_preserves_manual_notes(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     agents = tmp_path / "AGENTS.md"
     agents.write_text("# Project notes\n\nUse the existing component library.\n", encoding="utf-8")
@@ -71,8 +80,10 @@ def test_switch_to_frontend_removes_managed_guidance_and_preserves_manual_notes(
 
     assert main(["setup", "--profile", "frontend"]) == 0
     assert "Use the existing component library." in agents.read_text()
-    assert "harness prompt" not in agents.read_text()
-    assert not (tmp_path / "CLAUDE.md").exists()
+    assert "harness prompt" in agents.read_text()
+    assert "frontend changes" in agents.read_text()
+    assert "backend changes involving data storage" not in agents.read_text()
+    assert (tmp_path / "CLAUDE.md").exists()
 
     capsys.readouterr()
     assert main(["setup"]) == 0

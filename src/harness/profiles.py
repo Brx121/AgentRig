@@ -51,6 +51,15 @@ def _background_work(policy: Policy) -> str:
     )
 
 
+def _no_small_print_explanations(policy: Policy) -> str:
+    return (
+        "- Do not put information users need in order to understand or use the page into visually small or "
+        "de-emphasized explanatory text. Present necessary copy at a normal readable size with clear hierarchy, "
+        "or move it into an explicit empty, loading, error, or confirmation state. Remove explanatory text that "
+        "does not help users complete their task."
+    )
+
+
 RULES = {
     "object-storage": Rule(
         _object_storage,
@@ -78,15 +87,31 @@ RULES = {
         config_key="asynchronous_work",
         defaults=(("estimated_duration_max_seconds", DEFAULT_ASYNC_SECONDS),),
     ),
+    "no-small-print-explanations": Rule(
+        _no_small_print_explanations,
+        "Page copy and readability. Identify information users must know and decide whether it belongs in "
+        "normal-size copy, an explicit UI state, or no interface at all.",
+        "Page Copy and Readability",
+        "Record the project's readable typography scale and where required explanations, conditions, and "
+        "disclaimers are presented without relying on small print.",
+        (
+            "Confirm information required to understand or use the page is readable at normal body size or moved into a clear UI state.",
+            "Confirm no important condition, limitation, or disclaimer is communicated only through small-print explanations.",
+            "Confirm unnecessary explanatory copy is removed instead of visually de-emphasized.",
+        ),
+    ),
 }
 
 DEFAULT_PROFILE = "backend"
 BACKEND_RULES = ("object-storage", "background-work")
+FRONTEND_RULES = ("no-small-print-explanations",)
 BACKEND_SCOPE = "For backend changes involving data storage, long request work, or async jobs"
 BACKEND_NOTE = "Skip Harness for UI-only changes. For full-stack changes, apply the prompt to the backend portion."
+FRONTEND_SCOPE = "For frontend changes involving page copy, layout, or component interaction"
+FRONTEND_NOTE = "Skip Harness for backend-only changes. For full-stack changes, apply the prompt to the frontend portion."
 PROFILES = {
     "backend": Profile(BACKEND_RULES, ("time-sleep", "large-database-field"), BACKEND_SCOPE, BACKEND_NOTE),
-    "frontend": Profile(()),
+    "frontend": Profile(FRONTEND_RULES, (), FRONTEND_SCOPE, FRONTEND_NOTE),
 }
 
 

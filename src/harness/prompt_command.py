@@ -85,21 +85,26 @@ def render_prompt(
     project_root = root if root is not None else find_project_root(Path.cwd())
     config = _load_config(project_root)
     try:
+        configured_name = parse_profile(config)
         selected_name = parse_profile(config, profile_name)
         selected = PROFILES[selected_name]
         if not selected.rules:
             return _lightweight_prompt(task, kind)
         policy = parse_policy(config)
-        has_project_rules = bool(PROFILES[parse_profile(config)].rules)
+        use_project_context = configured_name == selected_name
     except PolicyError as error:
         raise PromptError(f".harness/config.json: {error}") from error
 
     defaults = managed_files(selected_name)
-    architecture = _project_context(
-        project_root, "ARCHITECTURE.md", str(defaults["ARCHITECTURE.md"]), required=has_project_rules
+    architecture = (
+        _project_context(project_root, "ARCHITECTURE.md", str(defaults["ARCHITECTURE.md"]), required=True)
+        if use_project_context
+        else str(defaults["ARCHITECTURE.md"])
     )
-    checklist = _project_context(
-        project_root, "REVIEW_CHECKLIST.md", str(defaults["REVIEW_CHECKLIST.md"]), required=has_project_rules
+    checklist = (
+        _project_context(project_root, "REVIEW_CHECKLIST.md", str(defaults["REVIEW_CHECKLIST.md"]), required=True)
+        if use_project_context
+        else str(defaults["REVIEW_CHECKLIST.md"])
     )
     template = _project_context(project_root, "PROMPT_TEMPLATE.md", PROMPT_TEMPLATE, required=False)
     try:

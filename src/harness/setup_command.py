@@ -49,6 +49,7 @@ LEGACY_TEMPLATES = {
         "20575e94db2b1ab089d8ad776ee3cc60569bf15b4e7a7e23b2c5fd9a43581129",
     },
 }
+LEGACY_FRONTEND_MANIFEST = {"version": 1, "managed_files": ["config.json", "manifest.json"]}
 
 
 def _read_if_present(path: Path) -> str | None:
@@ -124,7 +125,11 @@ def setup_project(root: Path, *, profile_name: str | None = None) -> list[Path]:
                 manifest = json.loads(existing)
             except json.JSONDecodeError:
                 continue
-            if manifest != default and any(manifest == managed_files(name)["manifest.json"] for name in PROFILES):
+            if manifest == LEGACY_FRONTEND_MANIFEST and selected == "frontend":
+                pending[path] = render_file_content(default)
+            elif manifest != default and any(
+                manifest == managed_files(profile_name)["manifest.json"] for profile_name in PROFILES
+            ):
                 pending[path] = render_file_content(default)
 
     agent_files = ["AGENTS.md", "CLAUDE.md"]
